@@ -19,6 +19,9 @@ export function withZernioManagement(handler: (context: WorkspaceContext, reques
         // Behind a TLS-terminating proxy request.url is http://, so also accept the public NEXTAUTH_URL origin.
         const allowed = [new URL(request.url).origin];
         if (process.env.NEXTAUTH_URL) allowed.push(new URL(process.env.NEXTAUTH_URL).origin);
+        // Also accept the proxy's forwarded host, e.g. Coolify/Traefik behind Cloudflare.
+        const forwardedHost = request.headers.get('x-forwarded-host');
+        if (forwardedHost) allowed.push(`${request.headers.get('x-forwarded-proto') ?? 'https'}://${forwardedHost}`);
         if (origin && !allowed.includes(origin)) throw new ConnectionError('Invalid request origin.', 403);
       }
       return await handler(context, request);
